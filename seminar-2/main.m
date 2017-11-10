@@ -162,6 +162,7 @@ meanYTrainError = mean(yTrainError);
 models = {"MVR", "PCR", "PLS"};
 %% Section B:
 clf;
+disp("Plotting the test samples (generalization)");
 figure(1);
 subplot(2, 1, 1);
 hold on; 
@@ -234,6 +235,25 @@ ylabel("Octane Ratio");
 grid on;
 hold off;
 
+input('Press Enter to visualize the fitted vs the observed on the test sample.\n', 's');
+clf;
+plot(yPredMR, Ytest, 'ro'), hold on;
+plot(yPredPCR, Ytest, 'go'), hold on;
+plot(yPredPLS, Ytest, 'bo');
+legend("MR", "PCR", "PLS");
+title("Observed vs Fitted Octane Ratio");
+xlabel("Predicted Ratio");
+ylabel("Observed Ratio");
+
+input('... now the training examples [ENTER]\n', 's');
+clf;
+plot(yTrainPredMR, Ytrain, 'ro'), hold on;
+plot(yTrainPredPCR, Ytrain, 'go'), hold on;
+plot(yTrainPredPLS, Ytrain, 'bo');
+legend("MR", "PCR", "PLS");
+title("Observed vs Fitted Octane Ratio");
+xlabel("Predicted Ratio");
+ylabel("Observed Ratio");
 %% Section C:
 disp("Mean Absolute Error (Test Set / Validation Set):");
 disp(models);
@@ -310,10 +330,8 @@ for Ndim = 1:10
     disp("Mean Absolute Error (Test Set / Validation Set):");
     disp(models);
     disp(meanYError);
-    disp("Variance [PCR]: "+ var(yPredPCR));
-    disp("Variance [PLS]: "+ var(yPredPLS));
-    PCRbuffer(Ndim) = var(yPredPCR);
-    PLSbuffer(Ndim) = var(yPredPLS);
+    PCRbuffer(Ndim) = sum(PCAVar(1:Ndim))/sum(PCAVar);
+    PLSbuffer(Ndim) = sum(pctvar(2, :));
 end
 
 
@@ -322,6 +340,7 @@ plot(1:Ndim, PLSbuffer, 'b-');
 xlabel("Number of Components");
 ylabel("\sigma^2");
 title("\sigma^2 vs N of Dim.");
+axis([1 10, 0, 1]);
 legend("PCR", "PLS");
 %% Section E:
 
@@ -342,7 +361,9 @@ y=octane;
 
 PCRAbsErr = zeros(10, 1);
 PLSAbsErr = PCRAbsErr;       
-    % PCR
+
+for Ndim = 1:10
+% PCR
 [PCALoadings,PCAScores,PCAVar] = pca(X,'Economy',false);
 betaPCR = regress(y-mean(y), PCAScores(:,1:Ndim));
 betaPCR = PCALoadings(:,1:Ndim)*betaPCR;
@@ -353,8 +374,8 @@ PCRAbsErr(Ndim) = mean(abs([ones(size(X, 1), 1) X]*betaPCR - y));
 [Xl,Yl,Xs,Ys,betaPLS,pctVar,PLSmsep] = plsregress(X,y,Ndim,'CV',10);
 
 PLSabsErr(Ndim) = mean(abs([ones(size(X, 1), 1) X]*betaPLS - y));
-end
 
+end
 % Plot the Mean
 
 plot(1:10,PLSabsErr,'b-o',1:10,PCRAbsErr,'r-^');
